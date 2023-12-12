@@ -38,11 +38,11 @@ function changeColor() {
   console.log('changeColor');
   const box = document.getElementById('box');
   const color = Hct.fromInt(Math.random() * 0xffffff);
-  console.log(color);
-  // const c = Math.random() * 0xffffff;
-  const c = `#${color.hex}`;
-  box.style.backgroundColor = c;
-  console.log(box);
+  // console.log(color);
+  const hue = color.hue.toString(16);
+  console.log(hue);
+  const c = (Math.random() * 0xffffff).toString(16);
+  box.style.backgroundColor = `#${hue.split('.')[0]}`;
 }
 
 
