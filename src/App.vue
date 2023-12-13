@@ -96,6 +96,14 @@ socket.on('startGame', () => {
   console.log('start');
 });
 
+socket.on('assignRole', (user) => {
+  info.assigned = user.assigned;
+  info.wolf = user.wolf;
+  info.event = user.event;
+  info.identity = user.identity;
+  console.log('assignRole', user);
+});
+
 function openDialog() {
   if (info.name !== '') {
     socket.emit('join', info);
@@ -159,11 +167,6 @@ function switchPos(index) {
   }
 }
 
-// watch(info, (newVal) => {
-//   console.log('update');
-//   info.index = newVal.users.findIndex(u => u.name === info.name);
-// });
-
 function userSwitch(res) {
   const index = info.switchIndex;
   if(res){
@@ -204,6 +207,12 @@ onMounted(() => {
       </div>
     </div>
     <md-filled-button @click="ready">{{ info.state ? "取消准备" : "准备" }}</md-filled-button>
+  </div>
+
+  <div id="main-3" v-else-if="step === 3">
+    <h2>你的身份是:</h2>
+    <h1> {{ info.index < 5 ? "蓝方" : "红方" }} </h1>
+    <div> {{ info.assigned ? `${info.wolf ? '卧底' : '平民'}` : '---' }} </div>
   </div>
 
   <md-dialog id="dialog" type="alert">

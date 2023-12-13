@@ -31,6 +31,20 @@ const gameState = {
 
 };
 
+const events = [
+    // 随机生成10个事件
+    { id: 1, event: 'sing a song' },
+    { id: 2, event: 'sing a song' },
+    { id: 3, event: 'sing a song' },
+    { id: 4, event: 'sing a song' },
+    { id: 5, event: 'sing a song' },
+    { id: 6, event: 'sing a song' },
+    { id: 7, event: 'sing a song' },
+    { id: 8, event: 'sing a song' },
+    { id: 9, event: 'sing a song' },
+    { id: 10, event: 'sing a song' },
+]
+
 function userAdd(user) {
     for (let i = 0; i < users.length; i++) {
         if (users[i] === 0) {
@@ -41,13 +55,24 @@ function userAdd(user) {
     return -1;
 }
 
-function switchPos(fromIndex, toIndex) {
-    const user = users[fromIndex];
-    const toUser = users[toIndex];
-    users[toIndex] = user;
-    users[fromIndex] = toUser;
-}
+function assigningRoles() {
+    const buleWoDi = users[Math.floor(Math.floor(Math.random() * 5))];
+    const redWoDi = users[Math.floor(Math.random() * 5) + 5];
 
+    buleWoDi.wolf = true;
+    redWoDi.wolf = true;
+
+    buleWoDi.event = events[Math.floor(Math.random() * events.length)];
+    redWoDi.event = events[Math.floor(Math.random() * events.length)];
+
+    users.forEach(user => {
+        if (user !== 0) {
+            user.assigned = true;
+            const socket = sockets.get(user.name);
+            socket.emit('assignRole', user);
+        }
+    });
+}
 
 
 io.on('connection', (socket) => {
@@ -56,7 +81,7 @@ io.on('connection', (socket) => {
     socket.on('join', ({ name, color = 0xffffff }) => {
 
         if (name && !users.some(user => user?.name == name)) {
-            const user = { id: socket.id, name, color, state: false, switching: false, switchIndex: -1 };
+            const user = { id: socket.id, name, color, state: false, switching: false, switchIndex: -1, event: null, wolf: false };
             const index = userAdd(user);
             if (index === -1) {
                 io.to(socket.id).emit('join_fail', { msg: '加入房间失败，房间已满。' });
@@ -142,12 +167,15 @@ io.on('connection', (socket) => {
     socket.on('ready', () => {
         console.log(`user ${users[socket.index].name} ready`);
         users[socket.index].state = true;
-        socket.to("root").emit('userReady', users[socket.index].name);
+        io.to("root").emit('userReady', users[socket.index].name);
         readyCount++;
-        if (readyCount === userCount && userCount === 10) {
+        if (readyCount === userCount && userCount === 2) {
             // 所有用户都准备好了，开始游戏
             console.log("start game");
-            socket.to("root").emit('startGame');
+            io.to("root").emit('startGame');
+            setTimeout(() => {
+                assigningRoles();
+            }, 3000);
         }
     });
 
@@ -173,8 +201,6 @@ io.on('connection', (socket) => {
             console.log(`User ${user.name} (ID: ${user.id}) left`);
         }
     });
-
-    socket
 
 });
 
