@@ -49,17 +49,17 @@ io.on('connection', (socket) => {
 
         if(name && !users.some(user => user?.name == name)){
             const user = {id: socket.id, name, color, state: false};
-            const res = userAdd(user);
-            if(res === -1) {
+            const index = userAdd(user);
+            if(index === -1) {
                 io.to(socket.id).emit('join_fail', { msg: '加入房间失败，房间已满。' });
                 socket.disconnect();
                 return;
             }
-            socket.index = res;
+            socket.index = index;
             sockets.set(name, socket);
             socket.join("root");
-            io.to(socket.id).emit('join_success', users);
-            socket.to("root").emit('userJoin', users);
+            io.to(socket.id).emit('join_success', {users, index: socket.index});
+            socket.to("root").emit('userJoin', user, index);
             console.log(`user ${name} join`);
         }else{
             socket.emit('join_fail', {msg: "加入房间失败，名字已存在。"});
@@ -93,7 +93,8 @@ io.on('connection', (socket) => {
     });
 
     // 用户取消准备
-    socket.on('cancel_ready', () => {
+    socket.on('cancelReady', () => {
+        console.log(`user ${users[socket.index].name} cancel ready`);
         users[socket.index].state = false;
         socket.to("root").emit('userCancelReady', users[socket.index].name);
     });

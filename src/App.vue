@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref, inject } from 'vue';
+import { onMounted, reactive, ref, inject, watch } from 'vue';
 import { CorePalette } from "@material/material-color-utilities";
 
 import '@material/web/button/filled-button.js';
@@ -12,7 +12,6 @@ import '@material/web/chips/filter-chip.js';
 import '@material/web/chips/assist-chip.js';
 import '@material/web/chips/suggestion-chip.js';
 
-import TeamSide from './components/TeamSide.vue';
 
 const socket = inject('socket');
 
@@ -22,7 +21,8 @@ let step = ref(1);
 const info = reactive({
   name: '',
   color: '0xffffff',
-  // users: Array(10).fill({name: '123'}),
+  state: false,
+  index: 0,
   users: []
 });
 
@@ -34,13 +34,13 @@ socket.on('join_success', (data) => {
   console.log('join_success');
   step.value += 1;
 
-  console.log(data);
-  // 直接赋值会失去响应式，
-  info.users = data;
+  info.users = data.users;
+  info.index = data.index;
 });
 
-socket.on('userJoin', (users) => {
-  info.users = users;
+socket.on('userJoin', (user,index) => {
+  info.users[index] = user;
+  console.log(info.users);
 });
 
 socket.on('userLeave', (name) => {
@@ -48,8 +48,7 @@ socket.on('userLeave', (name) => {
 });
 
 socket.on('userReady', (name) => {
-  console.log(name);
-  info.users = info.users.map(u => {
+  info.users.forEach(u => {
     if(u.name === name) {
       u.state = true;
     }
@@ -57,8 +56,7 @@ socket.on('userReady', (name) => {
 });
 
 socket.on('userCancelReady', (name) => {
-  console.log(name);
-  info.users = info.users.map(u => {
+  info.users.forEach(u => {
     if(u.name === name) {
       u.state = false;
     }
@@ -69,39 +67,40 @@ function openDialog() {
   if(info.name !== '') {
     socket.emit('join', info);
   }else{
-    console.log('openDialog');
     const dialog = document.getElementById('dialog');
     dialog.show();
   }
 }
 
+function ready() {
+    info.state = !info.state;
+    const user = info.users[info.index];
+    user.state = info.state;
+    if(info.state) {
+        socket.emit('ready');
+    }else{
+        socket.emit('cancelReady');
+    }
+}
+
 
 function submit() {
-  const name = document.getElementById('name')
+  const name = document.getElementById('name');
   info.name = name.value;
   name.value = '';
   info.color = changeColor();
   socket.emit('join', info);
-  // console.log(info);
 }
 
 function changeColor() {
   const corePalette = CorePalette.contentOf(Math.random() * 0xffffff);
   const keyColor = corePalette.a1.keyColor.argb.toString(16);
-  const colorHex = `#${keyColor}`;
-  const box = document.getElementById('box');
-  box.style.backgroundColor = colorHex;
-  return colorHex;
+  return `#${keyColor}`;
 }
 
 
 onMounted(() => {
-  const dialog = document.getElementById('dialog');
-  dialog.addEventListener('closed', () => {
-    if (dialog.returnValue === 'ok'){
-      console.log('ok');
-    }
-  });
+  
 });
 </script>
 
@@ -114,8 +113,22 @@ onMounted(() => {
   </div>
 
   <div id="main-2" v-else-if="step === 2">
-    Page 2
-    <TeamSide :arr="info.users" :selfName="info.name" :selfColor="info.color" />
+    <div class="team">
+        <div class="left" style="float: left;">
+            <div class="user"> 蓝方 </div>
+            <div v-for="u in info.users.slice(0, 5)" :style="`background-color: ${u.state ? u.color : '#fff'};`" class="user">
+                {{ u.name }}
+            </div>
+        </div>
+
+        <div class="right" style="float: right;">
+            <div class="user"> 红方 </div>
+            <div v-for="u in info.users.slice(5, 10)" class="user">
+                {{ u.name }}
+            </div>
+        </div>
+    </div>
+    <md-filled-button @click="ready">{{ info.state ? "取消准备" : "准备" }}</md-filled-button>
   </div>
   
   <md-dialog id="dialog" type="alert">
@@ -156,5 +169,23 @@ onMounted(() => {
   width: 100px;
   height: 100px;
   /* background-color: #db7c7c; */
+}
+
+.team {
+    width: 100%;
+    height: 100%;
+    padding-top: 10vh;
+}
+
+.user {
+    width: 40vw;
+    height: 90px;
+    border: 1px solid black;
+    display: flex;
+    /* flex-direction: column; */
+    justify-content: center;
+    align-items: center;
+
+    /* background-color: #db7c7c; */
 }
 </style>
