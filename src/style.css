@@ -11,6 +11,14 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+
+  --md-filter-chip-container-shape: 8px;
+  --md-filter-chip-container-height: 58px;
+  --md-filter-chip-label-text-font: system-ui;
+  --md-sys-color-outline: #6f7979;
+  --md-sys-color-on-surface: #191c1c;
+  --md-sys-color-secondary-container: #cce8e7;
 }
 
 a {
